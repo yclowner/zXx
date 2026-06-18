@@ -1,0 +1,721 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>VeromClips – Instant Replay & Editor</title>
+    <meta name="theme-color" content="#7c3aed">
+    <link rel="manifest" href="data:application/manifest+json;base64,ewogICJuYW1lIjogIlZlcm9tQ2xpcHMiLAogICJzaG9ydF9uYW1lIjogIlZlcm9tQ2xpcHMiLAogICJzdGFydF91cmwiOiAiLiIsCiAgImRpc3BsYXkiOiAic3RhbmRhbG9uZSIsCiAgImJhY2tncm91bmRfY29sb3IiOiAiIzBhMGExNCIsCiAgInRoZW1lX2NvbG9yIjogIiM3YzNhZWQiLAogICJpY29ucyI6IFsKICAgIHsKICAgICAgInNyYyI6ICJkYXRhOmltYWdlL3BuZztiYXNlNjQsaVZCT1J3MEtHZG9BQUFBTlNVaEVVZ0FBQUFBQUFBRUFDQVlBQUFBQWVBQUFBQkVWRVQzT2xPV2tBQUFBQkVWRVQzT2xPV2tBQUFBQVNVVk9SSzRDUXdBQUE9PSIsCiAgICAgICJzaXplcyI6ICIxeDEiLAogICAgICAidHlwZSI6ICJpbWFnZS9wbmciCiAgICB9CiAgXQp9" />
+    <style>
+        :root {
+            --bg: #0a0a14;
+            --surface: #111122;
+            --surface2: #1a1a2e;
+            --accent: #7c3aed;
+            --accent2: #f43f5e;
+            --text: #e0e0f0;
+            --text2: #9999bb;
+            --border: #2a2a44;
+            --radius: 16px;
+            --radius-sm: 12px;
+            --font: 'Segoe UI', 'Inter', system-ui, -apple-system, sans-serif;
+        }
+        * { margin:0; padding:0; box-sizing:border-box; }
+        body {
+            font-family: var(--font);
+            background: var(--bg);
+            color: var(--text);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+            background-image: radial-gradient(ellipse at 20% 50%, rgba(124,58,237,0.08) 0%, transparent 50%),
+                              radial-gradient(ellipse at 80% 20%, rgba(244,63,94,0.08) 0%, transparent 50%);
+        }
+        .app {
+            width: 100%;
+            max-width: 1300px;
+            background: var(--surface);
+            border-radius: var(--radius);
+            box-shadow: 0 20px 40px rgba(0,0,0,0.6);
+            border: 1px solid var(--border);
+            display: flex;
+            flex-direction: column;
+            min-height: 780px;
+            overflow: hidden;
+        }
+        .top-bar {
+            background: var(--surface2);
+            border-bottom: 1px solid var(--border);
+            padding: 12px 24px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-shrink: 0;
+        }
+        .app-logo {
+            font-weight: 700;
+            font-size: 1.2rem;
+            color: var(--accent);
+            letter-spacing: -0.02em;
+        }
+        .user-section { display: flex; align-items: center; gap: 12px; }
+        .user-btn {
+            background: var(--accent);
+            border: none;
+            color: white;
+            padding: 8px 18px;
+            border-radius: 30px;
+            font-weight: 600;
+            cursor: pointer;
+            font-family: var(--font);
+            font-size: 0.85rem;
+        }
+        .user-btn:hover { background: #6d28d9; }
+        .user-name {
+            font-weight: 600; color: var(--text); background: var(--surface);
+            padding: 6px 14px; border-radius: 20px; font-size: 0.9rem;
+        }
+        .signout-btn {
+            background: transparent; border: 1px solid var(--border);
+            color: var(--text2); padding: 6px 12px; border-radius: 20px;
+            cursor: pointer; font-size: 0.8rem; font-family: var(--font);
+        }
+        .body-wrap { display: flex; flex: 1; overflow: hidden; }
+        .sidebar {
+            width: 210px; background: var(--surface2); border-right: 1px solid var(--border);
+            display: flex; flex-direction: column; padding: 24px 0; gap: 8px; flex-shrink: 0;
+        }
+        .sidebar-btn {
+            display: flex; align-items: center; gap: 14px; padding: 14px 24px;
+            border: none; background: transparent; color: var(--text2); font-size: 0.95rem;
+            font-weight: 500; cursor: pointer; transition: all 0.2s ease;
+            border-left: 3px solid transparent; font-family: var(--font); text-align: left; width: 100%;
+        }
+        .sidebar-btn:hover { background: #252545; color: var(--text); }
+        .sidebar-btn.active {
+            background: rgba(124,58,237,0.12); color: var(--accent);
+            border-left-color: var(--accent); font-weight: 600;
+        }
+        .sidebar-btn .icon { font-size: 1.4rem; width: 24px; text-align: center; }
+        .main { flex: 1; padding: 28px; display: flex; flex-direction: column; gap: 24px; overflow-y: auto; }
+        .view { display: none; flex-direction: column; gap: 24px; }
+        .view.active { display: flex; }
+
+        .btn {
+            display: inline-flex; align-items: center; gap: 8px; padding: 12px 24px;
+            border-radius: 50px; font-weight: 600; font-size: 0.95rem; cursor: pointer;
+            border: none; transition: all 0.2s ease; white-space: nowrap; font-family: var(--font);
+            background: var(--accent); color: #fff; box-shadow: 0 4px 16px rgba(124,58,237,0.3);
+        }
+        .btn:hover { background: #6d28d9; transform: translateY(-2px); }
+        .btn:active { transform: translateY(0); }
+        .btn-secondary { background: var(--surface2); color: var(--text); border: 1px solid var(--border); box-shadow: none; }
+        .btn-secondary:hover { background: #252545; }
+        .btn-outline { background: transparent; border: 1.5px solid var(--border); color: var(--text); box-shadow: none; }
+        .btn-outline:hover { border-color: var(--accent); color: var(--accent); }
+        .btn-sm { padding: 8px 16px; font-size: 0.85rem; }
+        .btn-xs { padding: 6px 12px; font-size: 0.78rem; border-radius: 20px; }
+        .btn:disabled { opacity: 0.4; pointer-events: none; }
+
+        .controls-panel {
+            background: var(--surface2); border-radius: var(--radius-sm); padding: 20px;
+            border: 1px solid var(--border); display: flex; flex-wrap: wrap; gap: 20px; align-items: center;
+        }
+        .dot { width: 10px; height: 10px; border-radius: 50%; background: #e74c3c; }
+        .dot.active { background: #2ecc71; }
+
+        .gallery-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 16px; }
+        .clip-card { background: var(--surface2); border-radius: var(--radius-sm); padding: 12px; border: 1px solid var(--border); display: flex; flex-direction: column; gap: 8px; }
+        .clip-card video { width: 100%; border-radius: 8px; background: #000; max-height: 160px; object-fit: contain; }
+        .clip-actions { display: flex; gap: 6px; flex-wrap: wrap; }
+
+        .editor-layout { display: flex; gap: 20px; flex-wrap: wrap; }
+        .editor-video { flex: 1; min-width: 300px; background: #0a0a14; border-radius: var(--radius-sm); padding: 20px; display: flex; flex-direction: column; align-items: center; }
+        .editor-video video { max-width: 100%; max-height: 400px; border-radius: 8px; }
+        .timeline-container { flex: 1; background: var(--surface2); border-radius: var(--radius-sm); padding: 20px; display: flex; flex-direction: column; gap: 20px; }
+        .timeline-slider input[type="range"] { width: 100%; }
+
+        .settings-section { background: var(--surface2); border-radius: var(--radius-sm); padding: 20px; border: 1px solid var(--border); display: flex; flex-direction: column; gap: 16px; }
+        .setting-row { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 10px; }
+        .setting-row select { background: var(--bg); border: 1px solid var(--border); color: var(--text); padding: 8px 14px; border-radius: 30px; font-family: var(--font); font-size: 0.9rem; outline: none; }
+
+        .modal-overlay { position: fixed; top:0; left:0; width:100%; height:100%; background: rgba(0,0,0,0.75); backdrop-filter: blur(5px); display: none; align-items: center; justify-content: center; z-index: 1000; }
+        .modal { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 28px; max-width: 650px; width: 90%; display: flex; flex-direction: column; gap: 16px; }
+        .toast { position: fixed; bottom: 30px; left: 50%; transform: translateX(-50%) translateY(120px); background: #2ecc71; color: #fff; padding: 12px 24px; border-radius: 50px; font-weight: 600; z-index: 2000; transition: transform 0.35s; }
+        .toast.show { transform: translateX(-50%) translateY(0); }
+        .toast.error { background: #e74c3c; }
+    </style>
+</head>
+<body>
+    <div class="app">
+        <div class="top-bar">
+            <span class="app-logo">🎞️ VeromClips</span>
+            <div class="user-section" id="userSection">
+                <button class="user-btn" id="signInBtn">👤 Sign In</button>
+                <span class="user-name" id="userNameDisplay" style="display:none;"></span>
+                <button class="signout-btn" id="signOutBtn" style="display:none;">Sign Out</button>
+            </div>
+        </div>
+        <div class="body-wrap">
+            <div class="sidebar">
+                <button class="sidebar-btn active" data-view="capture"><span class="icon">🎥</span> Capture</button>
+                <button class="sidebar-btn" data-view="gallery"><span class="icon">🖼️</span> Gallery</button>
+                <button class="sidebar-btn" data-view="editor"><span class="icon">✂️</span> Editor</button>
+                <button class="sidebar-btn" data-view="settings"><span class="icon">⚙️</span> Settings</button>
+            </div>
+            <div class="main">
+                <div class="view active" id="captureView">
+                    <div class="controls-panel">
+                        <select id="bufferDuration">
+                            <option value="10">10s</option><option value="15">15s</option><option value="30" selected>30s</option><option value="45">45s</option><option value="60">60s</option>
+                        </select>
+                        <label><input type="checkbox" id="desktopAudio" checked> Desktop Audio</label>
+                        <label><input type="checkbox" id="micAudio"> Mic</label>
+                        <button class="btn" id="toggleBufferBtn"><span>▶</span> Start Buffer</button>
+                        <span class="dot" id="statusDot"></span>
+                        <span id="statusText">Idle</span>
+                    </div>
+                    <div class="hotkey-box">Press <kbd id="keyComboDisplay">Ctrl+Alt+C</kbd> to save clip</div>
+                    <button class="btn" id="installAppBtn" style="display:none;">📲 Install App</button>
+                    <div class="preview-section" id="previewContainer">
+                        <div class="placeholder-block"><span>📹</span><p>No clip selected</p></div>
+                        <video id="previewVideo" controls style="display:none;"></video>
+                    </div>
+                </div>
+
+                <div class="view" id="galleryView">
+                    <h3>📂 Your Clips</h3>
+                    <div class="gallery-grid" id="galleryGrid"></div>
+                </div>
+
+                <div class="view" id="editorView">
+                    <h3>✂️ Editor</h3>
+                    <div class="editor-layout">
+                        <div class="editor-video">
+                            <video id="editorVideo" controls></video>
+                            <p style="color:var(--text2); margin-top:10px;" id="editorPlaceholder">Select a clip from gallery to edit</p>
+                        </div>
+                        <div class="timeline-container">
+                            <div class="timeline-slider">
+                                <label>Start: <span id="editStartLabel">0.0s</span></label>
+                                <input type="range" id="editStartRange" min="0" max="100" value="0" step="0.1">
+                            </div>
+                            <div class="timeline-slider">
+                                <label>End: <span id="editEndLabel">0.0s</span></label>
+                                <input type="range" id="editEndRange" min="0" max="100" value="100" step="0.1">
+                            </div>
+                            <button class="btn btn-secondary btn-sm" id="previewTrimBtn">▶ Preview Trimmed</button>
+                            <button class="btn btn-sm" id="exportTrimBtn" disabled>💾 Export Trimmed Clip</button>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="view" id="settingsView">
+                    <h3>⚙️ Settings</h3>
+                    <div class="settings-section">
+                        <div class="setting-row">
+                            <span class="setting-label">Save Hotkey</span>
+                            <div style="display:flex; gap:10px; align-items:center;">
+                                <span id="currentHotkeyDisplay">Ctrl+Alt+C</span>
+                                <button class="btn btn-xs btn-outline" id="recordHotkeyBtn">🎹 Record New</button>
+                            </div>
+                        </div>
+                        <div class="setting-row">
+                            <span class="setting-label">Default Buffer Duration</span>
+                            <select id="defaultBufferDuration">
+                                <option value="10">10s</option><option value="30" selected>30s</option><option value="60">60s</option>
+                            </select>
+                        </div>
+                        <div class="setting-row">
+                            <span class="setting-label">Resolution</span>
+                            <select id="resolutionSelect">
+                                <option value="1080p">1080p (1920x1080)</option>
+                                <option value="1440p">1440p (2560x1440)</option>
+                                <option value="4k">4K (3840x2160)</option>
+                            </select>
+                        </div>
+                        <div class="setting-row">
+                            <span class="setting-label">FPS</span>
+                            <select id="fpsSelect">
+                                <option value="30">30</option>
+                                <option value="60">60</option>
+                            </select>
+                        </div>
+                        <div class="setting-row">
+                            <span class="setting-label">Bitrate</span>
+                            <select id="bitrateSelect">
+                                <option value="low">Low (5 Mbps)</option>
+                                <option value="medium" selected>Medium (15 Mbps)</option>
+                                <option value="high">High (50 Mbps)</option>
+                            </select>
+                        </div>
+                        <div class="setting-row">
+                            <span class="setting-label">Audio Sources</span>
+                            <div class="audio-toggles">
+                                <label><input type="checkbox" id="defaultDesktopAudio" checked> Desktop Audio</label>
+                                <label><input type="checkbox" id="defaultMic"> Mic</label>
+                            </div>
+                        </div>
+                        <div class="setting-row">
+                            <span class="setting-label">Clear Library</span>
+                            <button class="btn btn-xs btn-outline" id="clearLibraryBtn">🗑️ Clear All Clips</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal-overlay" id="shareModal">
+        <div class="modal">
+            <h3>🔗 Shareable Link</h3>
+            <div class="link-area" id="shareLinkText"></div>
+            <button class="btn btn-xs btn-outline" id="copyShareLinkBtn">📋 Copy</button>
+            <button class="btn btn-xs btn-secondary" id="closeModalBtn">Close</button>
+        </div>
+    </div>
+    <div class="toast" id="toast"></div>
+
+    <script>
+        if ('serviceWorker' in navigator) {
+            const swCode = `self.addEventListener('install',()=>self.skipWaiting());self.addEventListener('activate',()=>self.clients.claim());`;
+            const swBlob = new Blob([swCode],{type:'application/javascript'});
+            navigator.serviceWorker.register(URL.createObjectURL(swBlob)).catch(()=>{});
+        }
+
+        (() => {
+            // ---------- Persistent Settings ----------
+            const SETTINGS_KEY = 'veromclips_settings';
+            let settings = {
+                hotkey: { ctrlKey: true, altKey: true, shiftKey: false, metaKey: false, key: 'c' },
+                bufferDuration: 30,
+                desktopAudio: true,
+                micAudio: false,
+                resolution: '1080p',   // '1080p', '1440p', '4k'
+                fps: 30,
+                bitrate: 'medium',      // 'low', 'medium', 'high'
+            };
+
+            function loadSettings() {
+                try {
+                    const saved = localStorage.getItem(SETTINGS_KEY);
+                    if (saved) {
+                        const parsed = JSON.parse(saved);
+                        settings.hotkey = { ...settings.hotkey, ...(parsed.hotkey || {}) };
+                        settings.bufferDuration = parsed.bufferDuration || 30;
+                        settings.desktopAudio = parsed.desktopAudio !== false;
+                        settings.micAudio = parsed.micAudio === true;
+                        settings.resolution = parsed.resolution || '1080p';
+                        settings.fps = parsed.fps || 30;
+                        settings.bitrate = parsed.bitrate || 'medium';
+                    }
+                } catch (e) {}
+                applySettingsToUI();
+            }
+            function saveSettings() {
+                localStorage.setItem(SETTINGS_KEY, JSON.stringify(settings));
+                applySettingsToUI();
+            }
+
+            function applySettingsToUI() {
+                // Hotkey
+                const combo = [];
+                if (settings.hotkey.ctrlKey) combo.push('Ctrl');
+                if (settings.hotkey.altKey) combo.push('Alt');
+                if (settings.hotkey.shiftKey) combo.push('Shift');
+                if (settings.hotkey.metaKey) combo.push('Cmd');
+                combo.push(settings.hotkey.key.toUpperCase());
+                const display = combo.join('+');
+                document.getElementById('keyComboDisplay').textContent = display;
+                document.getElementById('currentHotkeyDisplay').textContent = display;
+
+                // Buffer
+                document.getElementById('bufferDuration').value = settings.bufferDuration;
+                document.getElementById('defaultBufferDuration').value = settings.bufferDuration;
+                bufferDuration = settings.bufferDuration;
+
+                // Audio
+                document.getElementById('desktopAudio').checked = settings.desktopAudio;
+                document.getElementById('defaultDesktopAudio').checked = settings.desktopAudio;
+                document.getElementById('micAudio').checked = settings.micAudio;
+                document.getElementById('defaultMic').checked = settings.micAudio;
+
+                // Quality
+                document.getElementById('resolutionSelect').value = settings.resolution;
+                document.getElementById('fpsSelect').value = settings.fps;
+                document.getElementById('bitrateSelect').value = settings.bitrate;
+            }
+
+            function getCaptureConstraints() {
+                const res = settings.resolution;
+                const fps = settings.fps;
+                let width, height;
+                switch (res) {
+                    case '1440p': width = 2560; height = 1440; break;
+                    case '4k': width = 3840; height = 2160; break;
+                    default: width = 1920; height = 1080;
+                }
+                return {
+                    video: {
+                        width: { ideal: width },
+                        height: { ideal: height },
+                        frameRate: { ideal: fps }
+                    },
+                    audio: settings.desktopAudio
+                };
+            }
+
+            function getVideoBitsPerSecond() {
+                const res = settings.resolution;
+                const fps = settings.fps;
+                const bitrate = settings.bitrate;
+                let baseMbps;
+                switch (bitrate) {
+                    case 'low': baseMbps = 5; break;
+                    case 'high': baseMbps = 50; break;
+                    default: baseMbps = 15;
+                }
+                // Scale with resolution/fps
+                let factor = 1;
+                if (res === '1440p') factor = 1.7;
+                else if (res === '4k') factor = 3.5;
+                if (fps === 60) factor *= 1.5;
+                return Math.round(baseMbps * factor * 1000000);
+            }
+
+            // ---------- Hotkey Record ----------
+            const recordHotkeyBtn = document.getElementById('recordHotkeyBtn');
+            let isRecordingHotkey = false;
+
+            function handleSaveHotkey(e) {
+                if (e.ctrlKey === settings.hotkey.ctrlKey &&
+                    e.altKey === settings.hotkey.altKey &&
+                    e.shiftKey === settings.hotkey.shiftKey &&
+                    e.metaKey === settings.hotkey.metaKey &&
+                    e.key.toLowerCase() === settings.hotkey.key) {
+                    e.preventDefault();
+                    if (isBuffering) saveClipFromBuffer();
+                    else showToast('Start buffer first', true);
+                }
+            }
+            document.addEventListener('keydown', handleSaveHotkey);
+
+            recordHotkeyBtn.addEventListener('click', () => {
+                if (isRecordingHotkey) return;
+                isRecordingHotkey = true;
+                recordHotkeyBtn.textContent = '⌨ Press keys…';
+                showToast('Press your new hotkey combination');
+                const onKeyDown = (e) => {
+                    e.preventDefault();
+                    if (['Control','Alt','Shift','Meta'].includes(e.key)) return;
+                    settings.hotkey = {
+                        ctrlKey: e.ctrlKey,
+                        altKey: e.altKey,
+                        shiftKey: e.shiftKey,
+                        metaKey: e.metaKey,
+                        key: e.key.toLowerCase(),
+                    };
+                    saveSettings();
+                    isRecordingHotkey = false;
+                    recordHotkeyBtn.textContent = '🎹 Record New';
+                    document.removeEventListener('keydown', onKeyDown);
+                    showToast('Hotkey updated!');
+                };
+                document.addEventListener('keydown', onKeyDown);
+                setTimeout(() => {
+                    if (isRecordingHotkey) {
+                        isRecordingHotkey = false;
+                        recordHotkeyBtn.textContent = '🎹 Record New';
+                        document.removeEventListener('keydown', onKeyDown);
+                        showToast('Recording cancelled', true);
+                    }
+                }, 5000);
+            });
+
+            // ---------- Other Settings Listeners ----------
+            document.getElementById('defaultBufferDuration').addEventListener('change', (e) => {
+                settings.bufferDuration = parseInt(e.target.value);
+                saveSettings();
+            });
+            document.getElementById('bufferDuration').addEventListener('change', (e) => {
+                settings.bufferDuration = parseInt(e.target.value);
+                saveSettings();
+            });
+            document.getElementById('defaultDesktopAudio').addEventListener('change', (e) => {
+                settings.desktopAudio = e.target.checked;
+                saveSettings();
+            });
+            document.getElementById('desktopAudio').addEventListener('change', (e) => {
+                settings.desktopAudio = e.target.checked;
+                saveSettings();
+            });
+            document.getElementById('defaultMic').addEventListener('change', (e) => {
+                settings.micAudio = e.target.checked;
+                saveSettings();
+            });
+            document.getElementById('micAudio').addEventListener('change', (e) => {
+                settings.micAudio = e.target.checked;
+                saveSettings();
+            });
+            document.getElementById('resolutionSelect').addEventListener('change', (e) => {
+                settings.resolution = e.target.value;
+                saveSettings();
+            });
+            document.getElementById('fpsSelect').addEventListener('change', (e) => {
+                settings.fps = parseInt(e.target.value);
+                saveSettings();
+            });
+            document.getElementById('bitrateSelect').addEventListener('change', (e) => {
+                settings.bitrate = e.target.value;
+                saveSettings();
+            });
+
+            // ---------- IndexedDB ----------
+            const DB_NAME='veromclips_db', STORE_NAME='clips';
+            let db;
+            function openDB() {
+                return new Promise((resolve,reject)=>{
+                    const req=indexedDB.open(DB_NAME,1);
+                    req.onupgradeneeded=e=>{ const d=e.target.result; if(!d.objectStoreNames.contains(STORE_NAME)) d.createObjectStore(STORE_NAME,{keyPath:'id'}); };
+                    req.onsuccess=e=>{ db=e.target.result; resolve(db); };
+                    req.onerror=e=>reject(e.target.error);
+                });
+            }
+            async function saveClipToDB(clip) {
+                if(!db) await openDB();
+                return new Promise((resolve,reject)=>{
+                    const tx=db.transaction(STORE_NAME,'readwrite');
+                    tx.objectStore(STORE_NAME).put(clip);
+                    tx.oncomplete=resolve; tx.onerror=reject;
+                });
+            }
+            async function getAllClipsFromDB() {
+                if(!db) await openDB();
+                return new Promise((resolve,reject)=>{
+                    const tx=db.transaction(STORE_NAME,'readonly');
+                    const req=tx.objectStore(STORE_NAME).getAll();
+                    req.onsuccess=()=>resolve(req.result); req.onerror=reject;
+                });
+            }
+            async function deleteClipFromDB(id) {
+                if(!db) await openDB();
+                return new Promise((resolve,reject)=>{
+                    const tx=db.transaction(STORE_NAME,'readwrite');
+                    tx.objectStore(STORE_NAME).delete(id);
+                    tx.oncomplete=resolve; tx.onerror=reject;
+                });
+            }
+            async function clearAllClipsFromDB() {
+                if(!db) await openDB();
+                return new Promise((resolve,reject)=>{
+                    const tx=db.transaction(STORE_NAME,'readwrite');
+                    tx.objectStore(STORE_NAME).clear();
+                    tx.oncomplete=resolve; tx.onerror=reject;
+                });
+            }
+
+            // ---------- Account ----------
+            let currentUser=localStorage.getItem('veromclips_activeUser')||null;
+            const signInBtn=document.getElementById('signInBtn'), signOutBtn=document.getElementById('signOutBtn'), userNameDisplay=document.getElementById('userNameDisplay');
+            function updateUserUI() {
+                if(currentUser) {
+                    signInBtn.style.display='none'; userNameDisplay.style.display='inline';
+                    userNameDisplay.textContent=`👤 ${currentUser}`; signOutBtn.style.display='inline';
+                } else {
+                    signInBtn.style.display='inline'; userNameDisplay.style.display='none'; signOutBtn.style.display='none';
+                }
+            }
+            signInBtn.addEventListener('click',()=>{
+                const name=prompt('Enter a username to sign in:');
+                if(name&&name.trim()) { currentUser=name.trim(); localStorage.setItem('veromclips_activeUser',currentUser); updateUserUI(); loadClipsForCurrentUser(); showToast(`Signed in as ${currentUser}`); }
+            });
+            signOutBtn.addEventListener('click',()=>{
+                if(confirm('Sign out? Your clips are saved.')) { currentUser=null; localStorage.removeItem('veromclips_activeUser'); updateUserUI(); savedClips=[]; renderGallery(); showToast('Signed out'); }
+            });
+
+            let savedClips=[];
+            async function loadClipsForCurrentUser() {
+                if(!currentUser) { savedClips=[]; renderGallery(); return; }
+                const all=await getAllClipsFromDB(); savedClips=all.filter(c=>c.userId===currentUser); renderGallery();
+            }
+            async function saveClip(clip) {
+                clip.userId=currentUser||'anonymous'; await saveClipToDB(clip); savedClips.push(clip); renderGallery();
+            }
+
+            function renderGallery() {
+                const grid=document.getElementById('galleryGrid');
+                if(!savedClips.length) { grid.innerHTML='<div style="color:var(--text2);text-align:center;padding:20px;">No clips yet</div>'; return; }
+                grid.innerHTML=savedClips.map(c=>`
+                    <div class="clip-card">
+                        <video src="${URL.createObjectURL(c.blob)}" muted preload="metadata"></video>
+                        <div>${c.name} (${c.duration}s)</div>
+                        <div class="clip-actions">
+                            <button class="btn btn-xs btn-outline" data-action="edit" data-id="${c.id}">✂ Edit</button>
+                            <button class="btn btn-xs btn-outline" data-action="download" data-id="${c.id}">⬇</button>
+                            <button class="btn btn-xs btn-outline" data-action="share" data-id="${c.id}">🔗</button>
+                            <button class="btn btn-xs btn-outline" data-action="delete" data-id="${c.id}">🗑</button>
+                        </div>
+                    </div>
+                `).join('');
+                grid.querySelectorAll('button').forEach(btn=>{
+                    btn.addEventListener('click',async e=>{
+                        const action=btn.dataset.action, id=parseInt(btn.dataset.id);
+                        const clip=savedClips.find(c=>c.id===id); if(!clip) return;
+                        if(action==='edit') { switchView('editor'); loadClipIntoEditor(clip); }
+                        else if(action==='download') downloadBlob(clip.blob,clip.name);
+                        else if(action==='share') generateShareLink(clip);
+                        else if(action==='delete') { if(confirm('Delete?')) { await deleteClipFromDB(id); savedClips=savedClips.filter(c=>c.id!==id); renderGallery(); showToast('Deleted'); } }
+                    });
+                });
+            }
+            function downloadBlob(blob,name) {
+                const url=URL.createObjectURL(blob), a=document.createElement('a'); a.href=url; a.download=name; a.click(); URL.revokeObjectURL(url);
+            }
+
+            function generateShareLink(clip) {
+                showToast('Uploading...');
+                const formData=new FormData(); formData.append('file',clip.blob,clip.name);
+                fetch('https://tmpfiles.org/api/v1/upload',{method:'POST',body:formData})
+                .then(r=>r.json())
+                .then(data=>{
+                    if(data?.data?.url) {
+                        const directUrl=data.data.url.replace('tmpfiles.org/','tmpfiles.org/dl/');
+                        document.getElementById('shareLinkText').innerHTML=`<strong>VeromClips Link:</strong> https://veromclips.com/c/${clip.shareId}<br><strong>Playable (Discord):</strong> <span style="color:#2ecc71;">${directUrl}</span>`;
+                        document.getElementById('shareModal').style.display='flex';
+                        navigator.clipboard.writeText(directUrl).then(()=>showToast('Link copied!'));
+                    } else fallbackDataUrl(clip);
+                }).catch(()=>{ showToast('Upload failed',true); fallbackDataUrl(clip); });
+            }
+            function fallbackDataUrl(clip) {
+                const reader=new FileReader();
+                reader.onload=()=>{
+                    document.getElementById('shareLinkText').innerHTML=`Data URL (may not embed):<br><span style="color:#e74c3c;">${reader.result.substring(0,100)}…</span>`;
+                    document.getElementById('shareModal').style.display='flex'; navigator.clipboard.writeText(reader.result);
+                };
+                reader.readAsDataURL(clip.blob);
+            }
+
+            // Editor
+            let currentEditorClip=null;
+            const editorVideo=document.getElementById('editorVideo'), editStartRange=document.getElementById('editStartRange'), editEndRange=document.getElementById('editEndRange');
+            const editStartLabel=document.getElementById('editStartLabel'), editEndLabel=document.getElementById('editEndLabel');
+            const previewTrimBtn=document.getElementById('previewTrimBtn'), exportTrimBtn=document.getElementById('exportTrimBtn'), editorPlaceholder=document.getElementById('editorPlaceholder');
+
+            function loadClipIntoEditor(clip) {
+                currentEditorClip=clip; editorVideo.src=URL.createObjectURL(clip.blob); editorVideo.style.display='block'; editorPlaceholder.style.display='none';
+                editorVideo.onloadedmetadata=()=>{
+                    const dur=editorVideo.duration; editStartRange.max=dur; editEndRange.max=dur; editStartRange.value=0; editEndRange.value=dur;
+                    updateEditLabels(); exportTrimBtn.disabled=false;
+                };
+            }
+            function updateEditLabels() { editStartLabel.textContent=parseFloat(editStartRange.value).toFixed(1)+'s'; editEndLabel.textContent=parseFloat(editEndRange.value).toFixed(1)+'s'; }
+            editStartRange.addEventListener('input',()=>{ if(parseFloat(editStartRange.value)>=parseFloat(editEndRange.value)) editStartRange.value=(parseFloat(editEndRange.value)-0.1).toFixed(1); updateEditLabels(); });
+            editEndRange.addEventListener('input',()=>{ if(parseFloat(editEndRange.value)<=parseFloat(editStartRange.value)) editEndRange.value=(parseFloat(editStartRange.value)+0.1).toFixed(1); updateEditLabels(); });
+            previewTrimBtn.addEventListener('click',()=>{
+                if(!editorVideo.src) return; editorVideo.currentTime=parseFloat(editStartRange.value); editorVideo.play();
+                const stop=()=>{ if(editorVideo.currentTime>=parseFloat(editEndRange.value)) { editorVideo.pause(); editorVideo.removeEventListener('timeupdate',stop); } };
+                editorVideo.addEventListener('timeupdate',stop);
+            });
+            exportTrimBtn.addEventListener('click',async ()=>{
+                if(!currentEditorClip) return; const start=parseFloat(editStartRange.value), end=parseFloat(editEndRange.value);
+                if(end-start<0.5) { showToast('Too short',true); return; }
+                const trimmed=await trimVideo(editorVideo,start,end);
+                const newClip={ id:Date.now(), name:`trimmed_${new Date().toISOString().replace(/[:.]/g,'-')}.webm`, blob:trimmed, duration:Math.round(end-start), timestamp:Date.now(), shareId:Math.random().toString(36).substring(2,12), userId:currentUser||'anonymous' };
+                await saveClip(newClip); showToast('Trimmed clip saved!');
+            });
+            async function trimVideo(videoEl,start,end) {
+                return new Promise((resolve,reject)=>{
+                    const stream=videoEl.captureStream(), rec=new MediaRecorder(stream,{mimeType:'video/webm'}), chunks=[];
+                    rec.ondataavailable=e=>{ if(e.data.size) chunks.push(e.data); };
+                    rec.onstop=()=>resolve(new Blob(chunks,{type:'video/webm'}));
+                    videoEl.currentTime=start; videoEl.play().then(()=>{
+                        rec.start();
+                        const check=()=>{ if(videoEl.currentTime>=end) { videoEl.pause(); rec.stop(); videoEl.removeEventListener('timeupdate',check); } };
+                        videoEl.addEventListener('timeupdate',check);
+                    }).catch(reject);
+                });
+            }
+
+            // Capture
+            let mediaRecorder=null, displayStream=null, micStream=null, audioContext=null, isBuffering=false, bufferDuration=settings.bufferDuration, bufferChunks=[];
+            const toggleBufferBtn=document.getElementById('toggleBufferBtn'), statusDot=document.getElementById('statusDot'), statusText=document.getElementById('statusText');
+
+            async function startBuffer() {
+                try {
+                    const constraints = getCaptureConstraints();
+                    displayStream=await navigator.mediaDevices.getDisplayMedia(constraints);
+                    if(settings.micAudio) { try { micStream=await navigator.mediaDevices.getUserMedia({audio:true}); } catch(e){} }
+                    const videoTrack=displayStream.getVideoTracks()[0], desktopAudioTrack=displayStream.getAudioTracks()[0], micAudioTrack=micStream?.getAudioTracks()[0];
+                    let finalAudioTrack=null;
+                    if(desktopAudioTrack||micAudioTrack) {
+                        audioContext=new AudioContext(); const dest=audioContext.createMediaStreamDestination();
+                        if(desktopAudioTrack) audioContext.createMediaStreamSource(new MediaStream([desktopAudioTrack])).connect(dest);
+                        if(micAudioTrack) audioContext.createMediaStreamSource(new MediaStream([micAudioTrack])).connect(dest);
+                        finalAudioTrack=dest.stream.getAudioTracks()[0];
+                    }
+                    const combined=new MediaStream([videoTrack,finalAudioTrack].filter(Boolean));
+                    const options = { mimeType: 'video/webm' };
+                    const bitrate = getVideoBitsPerSecond();
+                    if (MediaRecorder.isTypeSupported('video/webm; codecs=vp9')) {
+                        options.mimeType = 'video/webm; codecs=vp9';
+                    }
+                    options.videoBitsPerSecond = bitrate;
+                    mediaRecorder=new MediaRecorder(combined, options);
+                    bufferChunks=[];
+                    mediaRecorder.ondataavailable=e=>{ if(e.data?.size) { bufferChunks.push({blob:e.data,ts:Date.now()}); while(bufferChunks.length&&bufferChunks[0].ts<Date.now()-bufferDuration*1000) bufferChunks.shift(); } };
+                    mediaRecorder.start(500);
+                    isBuffering=true; toggleBufferBtn.innerHTML='<span>⏹</span> Stop Buffer'; statusDot.className='dot active'; statusText.textContent='Recording';
+                } catch(err) { showToast(err.message,true); }
+            }
+            function stopBuffer() {
+                if(mediaRecorder&&mediaRecorder.state!=='inactive') mediaRecorder.stop();
+                if(displayStream) displayStream.getTracks().forEach(t=>t.stop());
+                if(micStream) micStream.getTracks().forEach(t=>t.stop());
+                if(audioContext) audioContext.close();
+                mediaRecorder=displayStream=micStream=audioContext=null; isBuffering=false;
+                toggleBufferBtn.innerHTML='<span>▶</span> Start Buffer'; statusDot.className='dot'; statusText.textContent='Idle';
+            }
+            function saveClipFromBuffer() {
+                if(!isBuffering||!bufferChunks.length) { showToast('Buffer empty',true); return; }
+                const cutoff=Date.now()-bufferDuration*1000; bufferChunks=bufferChunks.filter(c=>c.ts>=cutoff);
+                const blob=new Blob(bufferChunks.map(c=>c.blob),{type:'video/webm'});
+                const clip={ id:Date.now(), name:`verom_${new Date().toISOString().replace(/[:.]/g,'-')}.webm`, blob, duration:bufferDuration, timestamp:Date.now(), shareId:Math.random().toString(36).substring(2,12) };
+                saveClip(clip); showToast('Clip saved!');
+            }
+            toggleBufferBtn.addEventListener('click',()=>isBuffering?stopBuffer():startBuffer());
+
+            // View switching
+            const views={capture:document.getElementById('captureView'),gallery:document.getElementById('galleryView'),editor:document.getElementById('editorView'),settings:document.getElementById('settingsView')};
+            const sidebarBtns=document.querySelectorAll('.sidebar-btn');
+            function switchView(name) { Object.values(views).forEach(v=>v.classList.remove('active')); views[name].classList.add('active'); sidebarBtns.forEach(b=>b.classList.toggle('active',b.dataset.view===name)); }
+            sidebarBtns.forEach(btn=>btn.addEventListener('click',()=>switchView(btn.dataset.view)));
+
+            // Clear library
+            document.getElementById('clearLibraryBtn').addEventListener('click',async ()=>{ if(confirm('Delete all clips?')) { await clearAllClipsFromDB(); savedClips=[]; renderGallery(); } });
+
+            // PWA install
+            let deferredPrompt;
+            const installAppBtn=document.getElementById('installAppBtn');
+            window.addEventListener('beforeinstallprompt',e=>{ e.preventDefault(); deferredPrompt=e; installAppBtn.style.display='inline-flex'; });
+            installAppBtn.addEventListener('click',()=>{ if(deferredPrompt) deferredPrompt.prompt(); });
+
+            function showToast(msg,isError=false) {
+                const toast=document.getElementById('toast'); toast.textContent=msg; toast.className='toast'+(isError?' error':'');
+                void toast.offsetHeight; toast.classList.add('show'); setTimeout(()=>toast.classList.remove('show'),2500);
+            }
+            document.getElementById('closeModalBtn').addEventListener('click',()=>document.getElementById('shareModal').style.display='none');
+            document.getElementById('copyShareLinkBtn').addEventListener('click',()=>{
+                const span=document.querySelector('#shareLinkText span');
+                if(span) { navigator.clipboard.writeText(span.textContent); showToast('Copied!'); }
+            });
+
+            // Init
+            loadSettings();
+            updateUserUI();
+            openDB().then(()=>{ if(currentUser) loadClipsForCurrentUser(); renderGallery(); });
+        })();
+    </script>
+</body>
+</html>
